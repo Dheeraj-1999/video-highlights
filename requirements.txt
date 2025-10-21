@@ -18,3 +18,4 @@ requests
 jinja2
 python-dotenv
 moviepy==1.0.3
+openai>=1.40.0
