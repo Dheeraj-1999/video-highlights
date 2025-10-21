@@ -9,5 +9,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 ENV PYTHONUNBUFFERED=1
 
-# Render sets $PORT. Streamlit must bind to 0.0.0.0 and that port.
-CMD ["bash","-lc","streamlit run app/streamlit_app.py --server.port $PORT --server.address 0.0.0.0"]
+# Streamlit must bind to $PORT and 0.0.0.0
+CMD ["bash", "-lc", "streamlit run app/streamlit_app.py --server.port $PORT --server.address 0.0.0.0"]
