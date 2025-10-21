@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+
+# Data & models
+data/raw/
+data/processed/
+*.mp4
+*.wav
+*.json
+*.bin
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment
+.venv/
+env/
+venv/
+*.log
+
+# VSCode / IDE
+.vscode/
+.idea/
+*.iml

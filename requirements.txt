@@ -1,0 +1,13 @@
+pydub
+moviepy
+pytube
+openai-whisper
+ffmpeg-python
+torch
+torchaudio
+transformers
+sentence-transformers
+faiss-cpu
+opencv-python
+streamlit
+tqdm
