@@ -1,23 +1,26 @@
-# --- Core runtime ---
-fastapi
-uvicorn
+# ---- Core web deps ----
+fastapi==0.115.0
+uvicorn==0.30.6
 python-multipart
 jinja2
 requests
 python-dotenv
 
-# --- AI / ML (CPU-only minimal) ---
+# ---- ML deps (CPU-only) ----
 torch==2.2.0+cpu
 --extra-index-url https://download.pytorch.org/whl/cpu
 
-# Whisper fork (smallest)
+# Use Whisper directly from GitHub (no torchvision/triton wheels)
 git+https://github.com/openai/whisper.git@main
 
-# Sentence transformer (lightweight variant)
+# Very light sentence transformer (no sklearn/scipy)
 sentence-transformers==2.2.2
 faiss-cpu==1.7.4
 
-# --- Video utils ---
+# ---- Video utils ----
 moviepy==1.0.3
 ffmpeg-python
 tqdm
+
+# ---- Force minimal installs ----
+--no-cache-dir

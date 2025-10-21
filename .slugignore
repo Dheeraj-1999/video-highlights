@@ -1,15 +1,13 @@
-# Ignore caches and local data
 __pycache__/
 *.pyc
 *.pyo
-*.pkl
 *.mp4
 *.wav
 *.json
 *.log
+.env
 data/
 models/
-.cache/
 tmp/
+.cache/
 venv/
-.env

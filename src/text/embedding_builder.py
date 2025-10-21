@@ -1,12 +1,10 @@
-import json, os
+import json
 import numpy as np
 from sentence_transformers import SentenceTransformer
 import faiss
 from src.utils.config import Config
 
 def build_embeddings(chunk_path, embedder=None):
-    import faiss, numpy as np, json
-
     if embedder is None:
         from sentence_transformers import SentenceTransformer
         embedder = SentenceTransformer("all-MiniLM-L6-v2")

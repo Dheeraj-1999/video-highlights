@@ -1,13 +1,14 @@
 FROM python:3.10-slim
 
+# Install minimal OS deps
 RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install only lightweight UI deps
+RUN pip install --no-cache-dir streamlit requests ffmpeg-python python-dotenv
 
-COPY . .
+COPY app ./app
 ENV PYTHONUNBUFFERED=1
 
-# Streamlit must bind to $PORT and 0.0.0.0
-CMD ["bash", "-lc", "streamlit run app/streamlit_app.py --server.port $PORT --server.address 0.0.0.0"]
+CMD ["bash","-lc","streamlit run app/streamlit_app.py --server.port $PORT --server.address 0.0.0.0"]
