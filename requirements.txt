@@ -11,3 +11,10 @@ faiss-cpu
 opencv-python
 streamlit
 tqdm
+fastapi
+uvicorn
+python-multipart
+requests
+jinja2
+python-dotenv
+moviepy==1.0.3

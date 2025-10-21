@@ -4,28 +4,27 @@ from sentence_transformers import SentenceTransformer
 import faiss
 from src.utils.config import Config
 
-def build_embeddings(chunk_file="data/processed/chunks.json",
-                     index_out="data/processed/faiss_index.bin"):
-    with open(chunk_file, "r", encoding="utf-8") as f:
+def build_embeddings(chunk_path, embedder=None):
+    import faiss, numpy as np, json
+
+    if embedder is None:
+        from sentence_transformers import SentenceTransformer
+        embedder = SentenceTransformer("all-MiniLM-L6-v2")
+
+    with open(chunk_path, "r", encoding="utf-8") as f:
         chunks = json.load(f)
+
+    print(f"🧠 Loaded {len(chunks)} chunks for embedding")
     texts = [c["text"] for c in chunks]
+    embeddings = embedder.encode(texts, convert_to_numpy=True, show_progress_bar=True)
 
-    print(f"🧠 Loaded {len(texts)} chunks for embedding")
+    embeddings = np.array(embeddings, dtype="float32")
+    faiss.normalize_L2(embeddings)
 
-    model = SentenceTransformer("all-MiniLM-L6-v2")
-    print("🔢 Encoding text chunks...")
-    embs = model.encode(texts, convert_to_numpy=True, show_progress_bar=True)
-    print("✅ Embeddings shape:", embs.shape)
-
-    faiss.normalize_L2(embs)
-    index = faiss.IndexFlatIP(embs.shape[1])
-    index.add(embs)
-    print("💾 Adding vectors to FAISS index...")
-
-    faiss.write_index(index, index_out)
-    print(f"✅ FAISS index saved at {index_out}")
-
-    return index, chunks
+    index = faiss.IndexFlatIP(embeddings.shape[1])
+    index.add(embeddings)
+    faiss.write_index(index, "data/processed/faiss_index.bin")
+    print("✅ FAISS index saved at data/processed/faiss_index.bin")
 
 
 if __name__ == "__main__":

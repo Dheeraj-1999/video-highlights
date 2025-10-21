@@ -1,0 +1,14 @@
+FROM python:3.10-slim
+
+# OS deps
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+ENV PYTHONUNBUFFERED=1
+
+# CORS is handled in server.py; port will be injected by Render.
+CMD ["uvicorn","api.server:app","--host","0.0.0.0","--port","8000"]
