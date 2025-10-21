@@ -1,15 +1,23 @@
+# --- Core runtime ---
 fastapi
 uvicorn
 python-multipart
 jinja2
 requests
 python-dotenv
-openai>=1.40.0
+
+# --- AI / ML (CPU-only minimal) ---
 torch==2.2.0+cpu
 --extra-index-url https://download.pytorch.org/whl/cpu
-openai-whisper @ git+https://github.com/openai/whisper.git@main
-sentence-transformers
-faiss-cpu
+
+# Whisper fork (smallest)
+git+https://github.com/openai/whisper.git@main
+
+# Sentence transformer (lightweight variant)
+sentence-transformers==2.2.2
+faiss-cpu==1.7.4
+
+# --- Video utils ---
 moviepy==1.0.3
 ffmpeg-python
 tqdm
