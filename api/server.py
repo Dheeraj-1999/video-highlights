@@ -15,6 +15,10 @@ from src.text.chunker import merge_segments
 from src.text.embedding_builder import build_embeddings
 from src.text.highlight_selector import query_similar_chunks, rerank_with_llm
 from src.video.cutter import create_highlight_reel, limit_highlight_duration
+# ============================================================
+os.environ["TRANSFORMERS_CACHE"] = tempfile.gettempdir()
+os.environ["TORCH_HOME"] = tempfile.gettempdir()
+os.environ["HF_HOME"] = tempfile.gettempdir()
 
 # ============================================================
 # ⚙️ FastAPI setup
