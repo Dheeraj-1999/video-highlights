@@ -3,11 +3,12 @@ uvicorn
 python-multipart
 jinja2
 requests
-streamlit
 python-dotenv
 openai>=1.40.0
+torch==2.2.0+cpu
+--extra-index-url https://download.pytorch.org/whl/cpu
+openai-whisper @ git+https://github.com/openai/whisper.git@main
 sentence-transformers
-openai-whisper
 faiss-cpu
 moviepy==1.0.3
 ffmpeg-python
