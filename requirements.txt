@@ -20,3 +20,4 @@ numba==0.59.1
 moviepy==1.0.3
 ffmpeg-python
 tqdm
+openai
