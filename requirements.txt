@@ -1,4 +1,4 @@
-# ---- Core web deps ----
+# ---- Core web framework ----
 fastapi==0.115.0
 uvicorn==0.30.6
 python-multipart
@@ -6,21 +6,16 @@ jinja2
 requests
 python-dotenv
 
-# ---- ML deps (CPU-only) ----
-torch==2.2.0+cpu
+# ---- ML / GenAI ----
+torch==2.2.0
 --extra-index-url https://download.pytorch.org/whl/cpu
-
-# Use Whisper directly from GitHub (no torchvision/triton wheels)
 git+https://github.com/openai/whisper.git@main
-
-# Very light sentence transformer (no sklearn/scipy)
 sentence-transformers==2.2.2
 faiss-cpu==1.7.4
+numpy==1.26.4
+numba==0.59.1
 
 # ---- Video utils ----
 moviepy==1.0.3
 ffmpeg-python
 tqdm
-
-# ---- Force minimal installs ----
---no-cache-dir
