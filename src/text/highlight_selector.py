@@ -8,8 +8,6 @@ from src.utils.config import Config
 
 
 client = OpenAI(api_key=Config.OPENAI_API_KEY)
-
-
 # -----------------------------------------------------------
 # Utility functions
 # -----------------------------------------------------------
@@ -31,7 +29,7 @@ def load_chunks(chunk_path="data/processed/chunks.json"):
 
 def query_similar_chunks(query, top_k=8):
     """Get top_k most semantically similar transcript chunks."""
-    print(f"🔍 Querying top {top_k} relevant transcript chunks...")
+    print(f"Querying top {top_k} relevant transcript chunks...")
     model = SentenceTransformer("all-MiniLM-L6-v2")
 
     index = load_index()
@@ -51,7 +49,7 @@ def query_similar_chunks(query, top_k=8):
                 "score": float(score)
             })
 
-    print(f"✅ Retrieved {len(results)} candidate segments.")
+    print(f"Retrieved {len(results)} candidate segments.")
     return results
 
 

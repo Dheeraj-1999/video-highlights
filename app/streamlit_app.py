@@ -6,8 +6,8 @@ import streamlit as st
 # ⚙️ FastAPI endpoint
 # API_URL = "http://127.0.0.1:8000/generate_highlight"
 import os
-# API_URL = os.getenv("VIDEO_API_URL", "http://127.0.0.1:8000/generate_highlight")
-API_URL = os.getenv("VIDEO_API_URL", "https://genai-video-api.onrender.com/generate_highlight")
+API_URL = os.getenv("VIDEO_API_URL", "http://127.0.0.1:8000/generate_highlight")
+# API_URL = os.getenv("VIDEO_API_URL", "https://genai-video-api.onrender.com/generate_highlight")
 
 
 st.set_page_config(page_title="🎬 GenAI Video Highlights", layout="wide")
@@ -21,7 +21,7 @@ user_prompt = st.sidebar.text_area(
     "Show only boundaries, crowd reactions, and commentator excitement."
 )
 target_duration = st.sidebar.slider(
-    "Target Highlight Duration (seconds)", 30, 180, 60, step=10
+    "Target Highlight Duration (seconds)", 15, 180, 60, step=10
 )
 generate_button = st.sidebar.button("🚀 Generate Highlights")
 

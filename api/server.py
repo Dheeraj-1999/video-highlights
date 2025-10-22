@@ -46,8 +46,8 @@ def get_whisper():
 def get_embedder():
     from sentence_transformers import SentenceTransformer
     print("🧠 Loading SentenceTransformer (MiniLM-L6-v2)...")
-    # return SentenceTransformer("all-MiniLM-L6-v2")
-    return SentenceTransformer("paraphrase-MiniLM-L3-v2")
+    return SentenceTransformer("all-MiniLM-L6-v2")
+    # return SentenceTransformer("paraphrase-MiniLM-L3-v2")
 
 # ============================================================
 # 🚀 API Route

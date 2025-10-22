@@ -1,4 +1,3 @@
-import json
 from typing import List, Dict
 
 def merge_segments(segments: List[Dict], chunk_seconds: float = 30.0) -> List[Dict]:
@@ -28,13 +27,3 @@ def merge_segments(segments: List[Dict], chunk_seconds: float = 30.0) -> List[Di
             "text": " ".join(buf)
         })
     return chunks
-
-
-if __name__ == "__main__":
-    # quick standalone test
-    with open("data/processed/transcript_segments.json") as f:
-        segs = json.load(f)
-    merged = merge_segments(segs)
-    with open("data/processed/chunks.json", "w") as f:
-        json.dump(merged, f, indent=2)
-    print(f"Created {len(merged)} chunks")

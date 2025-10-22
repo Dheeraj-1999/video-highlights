@@ -1,7 +1,6 @@
 import os, sys, json
 import subprocess
 import whisper
-from tqdm import tqdm
 from src.utils.config import Config
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -30,15 +29,3 @@ def transcribe_audio(audio_path: str, model_size: str = "tiny") -> list:
     print("Transcribing...")
     result = model.transcribe(audio_path, verbose=False)
     return result["segments"]
-
-
-if __name__ == "__main__":
-    video_path = "data/raw/sample.mp4"
-    audio_path = extract_audio(video_path)
-    segments = transcribe_audio(audio_path)
-    print(f"Transcription complete: {len(segments)} segments")
-    output_path = os.path.join(Config.PROCESSED_DIR, "transcript_segments.json")
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(segments, f, indent=2, ensure_ascii=False)
-    print(f"💾 Transcript saved to {output_path}")
-

@@ -88,7 +88,3 @@ def create_highlight_reel(video_path, highlight_file="data/processed/highlight_c
     final.close()
     base_video.close()
     return output_path
-
-if __name__ == "__main__":
-    video_path = "data/raw/sample.mp4"
-    create_highlight_reel(video_path)
