@@ -27,5 +27,5 @@ def transcribe_audio(audio_path: str, model_size: str = "tiny") -> list:
     print(f"Loading Whisper model: {model_size}")
     model = whisper.load_model(model_size)
     print("Transcribing...")
-    result = model.transcribe(audio_path, verbose=False)
+    result = model.transcribe(audio_path, fp16=False, verbose=False, chunk_length=15)
     return result["segments"]

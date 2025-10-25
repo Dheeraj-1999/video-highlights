@@ -34,7 +34,7 @@ def extract_clips(video_path: str, highlights, fade_duration=0.3):
             clips.append(clip)
 
         except Exception as e:
-            print(f"⚠️ Skipping invalid segment {h}: {e}")
+            print(f"Skipping invalid segment {h}: {e}")
     # base_video.close()
     return clips, base_video
 
@@ -70,7 +70,7 @@ def create_highlight_reel(video_path, highlight_file="data/processed/highlight_c
 
     clips, base_video = extract_clips(video_path, highlights)
     if not clips:
-        print("⚠️ No valid highlight clips found.")
+        print("No valid highlight clips found.")
         return None
 
     final = concatenate_videoclips(clips, method="compose")
@@ -82,6 +82,8 @@ def create_highlight_reel(video_path, highlight_file="data/processed/highlight_c
         audio_codec="aac",
         temp_audiofile="temp-audio.m4a",
         remove_temp=True,
+        threads=2,
+        write_logfile=False,
         verbose=True
     )
     print(f"✅ Highlight reel created: {output_path}")
