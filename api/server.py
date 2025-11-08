@@ -1,121 +1,84 @@
 import os
-import json
-import tempfile
-import gc
-from functools import lru_cache
-
+import uvicorn
 from fastapi import FastAPI, UploadFile, Form
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-
 from src.utils.helpers import create_dirs
-from src.utils.config import Config
-from src.audio.transcriber import extract_audio
-from src.text.chunker import merge_segments
-from src.text.embedding_builder import build_embeddings
-from src.text.highlight_selector import query_similar_chunks, rerank_with_llm
-from src.video.cutter import create_highlight_reel, limit_highlight_duration
-# ============================================================
-os.environ["TRANSFORMERS_CACHE"] = tempfile.gettempdir()
-os.environ["TORCH_HOME"] = tempfile.gettempdir()
-os.environ["HF_HOME"] = tempfile.gettempdir()
+from api.jobs import create_job, get_job_status, load_job_state
+from src.utils.model_cache import ModelCache
 
-# ============================================================
-# ⚙️ FastAPI setup
-# ============================================================
+# ------------------------------------------------------------------
 app = FastAPI(title="🎬 GenAI Video Highlight API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],        # later restrict to your Streamlit domain
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ============================================================
-# 🧠 Lazy-load models on demand  (kept cached thereafter)
-# ============================================================
-@lru_cache(maxsize=1)
-def get_whisper():
-    import whisper
-    print("🧠 Loading Whisper (tiny)...")
-    return whisper.load_model("tiny")
+# ------------------------------------------------------------------
+@app.on_event("startup")
+async def startup_event():
+    create_dirs()
+    print("✅ Directories created. API Ready.")
+    ModelCache.load_whisper("tiny")
+    ModelCache.load_embedder("all-mpnet-base-v2")
+    print("🔥 Models pre-loaded successfully.")
 
-@lru_cache(maxsize=1)
-def get_embedder():
-    from sentence_transformers import SentenceTransformer
-    print("🧠 Loading SentenceTransformer (MiniLM-L6-v2)...")
-    return SentenceTransformer("all-MiniLM-L6-v2")
-    # return SentenceTransformer("paraphrase-MiniLM-L3-v2")
 
-# ============================================================
-# 🚀 API Route
-# ============================================================
-@app.post("/generate_highlight")
-async def generate_highlight(
-    video_file: UploadFile,
-    user_prompt: str = Form(...),
-    target_duration: int = Form(60)
-):
+@app.get("/")
+def root():
+    return {"message": "Welcome to GenAI Video Highlights API"}
+
+
+@app.post("/jobs")
+async def start_job(video_file: UploadFile, target_duration: int = Form(60)):
+    file_bytes = await video_file.read()
+    job_id = create_job(video_file.filename, file_bytes, target_duration)
+    return {"job_id": job_id}
+
+
+@app.get("/status/{job_id}")
+def check_job_status(job_id: str):
+    job_info = load_job_state(job_id)
+    if not job_info:
+        return JSONResponse(status_code=200, content={"state": "queued", "progress": 0, "message": "Starting..."})
+    print(f"📊 STATUS [{job_id[:6]}]: {job_info}")
+    return job_info
+
+
+@app.get("/result/{job_id}")
+def download_result(job_id: str):
+    job = load_job_state(job_id)
+    if not job:
+        return JSONResponse(status_code=404, content={"error": "Job not found"})
+
+    result_path = job.get("result_path")
+    if not result_path or not os.path.isfile(result_path):
+        print(f"⚠️ Missing result file for {job_id}: {result_path}")
+        return JSONResponse(status_code=404, content={"error": f"Result file missing: {result_path}"})
+
+    return FileResponse(result_path, media_type="video/mp4", filename=os.path.basename(result_path))
+
+@app.get("/warmup")
+def warmup_models():
+    """
+    Pre-load Whisper + SentenceTransformer models in memory.
+    Useful to avoid cold-start latency.
+    """
     try:
-        create_dirs()
-        tmp_dir = tempfile.mkdtemp()
-        video_path = os.path.join(tmp_dir, video_file.filename)
-
-        with open(video_path, "wb") as f:
-            f.write(await video_file.read())
-
-        # Step 1 – Transcription
-        print("🎧 Transcribing (lazy Whisper load if first run)...")
-        whisper_model = get_whisper()
-        audio_path = extract_audio(video_path)
-        result = whisper_model.transcribe(audio_path)
-        segments = result["segments"]
-        del result
-        gc.collect()
-
-        # Step 2 – Chunk merge
-        chunks = merge_segments(segments)
-        chunk_path = os.path.join(Config.PROCESSED_DIR, "chunks.json")
-        with open(chunk_path, "w", encoding="utf-8") as f:
-            json.dump(chunks, f, indent=2)
-        del segments
-        gc.collect()
-
-        # Step 3 – Embeddings
-        print("🔢 Building embeddings (lazy embedder load if first run)...")
-        build_embeddings(chunk_path, embedder=get_embedder())
-        gc.collect()
-
-        # Step 4 – Query + LLM rerank
-        results = query_similar_chunks("interesting highlights", top_k=15)
-        ranked = rerank_with_llm(results, user_prompt, target_duration)
-
-        # Step 5 – Trim to target duration
-        ranked = limit_highlight_duration(ranked, max_total_seconds=target_duration)
-
-        # Step 6 – Save highlight metadata
-        highlight_path = os.path.join(Config.PROCESSED_DIR, "highlight_candidates.json")
-        with open(highlight_path, "w", encoding="utf-8") as f:
-            json.dump(ranked, f, indent=2)
-
-        # Step 7 – Assemble final reel
-        output_video = create_highlight_reel(video_path)
-
-        # Clean up temp files
-        try:
-            os.remove(audio_path)
-        except Exception:
-            pass
-        gc.collect()
-
-        return FileResponse(
-            output_video,
-            media_type="video/mp4",
-            filename=os.path.basename(output_video),
-        )
-
+        whisper_model = ModelCache.load_whisper("tiny")
+        embed_model = ModelCache.load_embedder("all-mpnet-base-v2")
+        return {
+            "message": "✅ Models warmed up and cached.",
+            "whisper_device": str(whisper_model.device),
+            "embedder_loaded": embed_model is not None
+        }
     except Exception as e:
-        print("❌ Pipeline failed:", e)
-        return JSONResponse({"error": str(e)}, status_code=500)
+        return {"error": str(e)}
+
+
+if __name__ == "__main__":
+    uvicorn.run("api.server:app", host="0.0.0.0", port=8000)

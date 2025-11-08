@@ -1,28 +1,18 @@
 import os
+import time
 import tempfile
 import requests
 import streamlit as st
 
-# ⚙️ FastAPI endpoint
-# API_URL = "http://127.0.0.1:8000/generate_highlight"
-import os
-API_URL = os.getenv("VIDEO_API_URL", "http://127.0.0.1:8000/generate_highlight")
-# API_URL = os.getenv("VIDEO_API_URL", "https://genai-video-api.onrender.com/generate_highlight")
-
+API_URL = os.getenv("VIDEO_API_URL", "http://127.0.0.1:8000")
 
 st.set_page_config(page_title="🎬 GenAI Video Highlights", layout="wide")
 st.title("🎥 Generative AI Video Highlights")
-st.write("Upload a video and let AI create a creative, time-bound highlight reel.")
+st.caption("Upload a video and let AI create a creative, time-bound highlight reel.")
 
-# Sidebar configuration
+# Sidebar
 st.sidebar.header("🧠 Highlight Configuration")
-user_prompt = st.sidebar.text_area(
-    "Creative Prompt",
-    "Show only boundaries, crowd reactions, and commentator excitement."
-)
-target_duration = st.sidebar.slider(
-    "Target Highlight Duration (seconds)", 15, 180, 60, step=10
-)
+target_duration = st.sidebar.slider("Target Highlight Duration (seconds)", 15, 360, 60, step=10)
 generate_button = st.sidebar.button("🚀 Generate Highlights")
 
 # File upload
@@ -33,34 +23,82 @@ if generate_button:
         st.error("Please upload a video file first.")
         st.stop()
 
-    st.info("⚙️ Uploading to FastAPI and running pipeline...")
+    st.info("⚙️ Uploading video and starting processing job...")
     st.video(uploaded_file)
 
-    # Save temp file
     tmp_dir = tempfile.mkdtemp()
     video_path = os.path.join(tmp_dir, uploaded_file.name)
     with open(video_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
 
-    # Prepare payload for FastAPI
-    files = {"video_file": open(video_path, "rb")}
-    data = {
-        "user_prompt": user_prompt,
-        "target_duration": target_duration,
-    }
-
-    # Call FastAPI backend
     try:
-        response = requests.post(API_URL, files=files, data=data, timeout=600)
+        files = {"video_file": open(video_path, "rb")}
+        data = {"target_duration": target_duration}
+        res = requests.post(f"{API_URL}/jobs", files=files, data=data)
+        if res.status_code != 200:
+            st.error(f"❌ Job creation failed: {res.text}")
+            st.stop()
 
-        if response.status_code == 200:
-            output_path = os.path.join(tmp_dir, "highlight_reel.mp4")
-            with open(output_path, "wb") as f:
-                f.write(response.content)
-            st.success("✅ Highlight reel created successfully!")
-            st.video(output_path)
-        else:
-            st.error(f"❌ Backend error: {response.status_code} - {response.text}")
+        job_id = res.json()["job_id"]
+        st.success(f"✅ Job created! ID: `{job_id}`")
 
     except Exception as e:
-        st.error(f"❌ Connection failed: {e}")
+        st.error(f"🚨 Failed to connect to backend: {e}")
+        st.stop()
+
+    # Poll job status
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+    download_shown = False
+
+    while True:
+        try:
+            resp = requests.get(f"{API_URL}/status/{job_id}", timeout=10)
+            if resp.status_code != 200:
+                status_text.text("⏳ Waiting for backend...")
+                time.sleep(3)
+                continue
+            status = resp.json()
+        except Exception as e:
+            status_text.text(f"⚠️ Waiting for job... {e}")
+            time.sleep(3)
+            continue
+
+        state = status.get("state", "unknown")
+        progress = int(status.get("progress", 0))
+        message = status.get("message", "")
+        status_text.text(f"🌀 {state.upper()} | {message}")
+        progress_bar.progress(min(progress, 100))
+
+        if state.lower() == "done":
+            st.success("✅ Highlight generation completed!")
+            download_url = status.get("download_url")
+
+            if not download_shown and download_url:
+                try:
+                    st.info("⬇️ Fetching final video...")
+                    r = requests.get(download_url, stream=True, timeout=30)
+                    if r.status_code == 200:
+                        tmp_output = os.path.join(tmp_dir, f"{job_id}_output.mp4")
+                        with open(tmp_output, "wb") as f:
+                            for chunk in r.iter_content(8192):
+                                f.write(chunk)
+                        st.video(tmp_output)
+                        st.download_button(
+                            "📥 Download MP4",
+                            data=open(tmp_output, "rb").read(),
+                            file_name=f"{job_id}_output.mp4",
+                            mime="video/mp4",
+                        )
+                        download_shown = True
+                    else:
+                        st.warning(f"⚠️ Could not download result ({r.status_code})")
+                except Exception as e:
+                    st.error(f"❌ Download failed: {e}")
+            break
+
+        elif state.lower() == "failed":
+            st.error(f"❌ Job failed: {status.get('error')}")
+            break
+
+        time.sleep(2)
