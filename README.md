@@ -53,22 +53,30 @@ video-highlights/
 ```bash
 git clone https://github.com/Dheeraj-1999/video-highlights.git
 cd video-highlights
+```
 
 ## Using Conda (recommended):
+```
 conda create -n genai python=3.10 -y
 conda activate genai
-
+```
 ## Or using venv:
+```
 python -m venv genai
 genai\Scripts\activate      # Windows
+```
 
 ## Install dependencies
+```
 pip install -r requirements.txt
-
+```
 
 
 ## Start the Streamlit Frontend
+```
 streamlit run app/streamlit_app.py
-
+```
 ## Start the FastAPI Backend
+```
 uvicorn api.server:app --reload --port 8000
+```
