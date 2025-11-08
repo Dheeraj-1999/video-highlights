@@ -1,11 +1,11 @@
-import json
+import json, os
 import numpy as np
 from sentence_transformers import SentenceTransformer
 import faiss
 from src.utils.model_cache import ModelCache
-# from src.utils.config import Config
+from src.utils.config import Config
 
-def build_embeddings(chunk_path, embedder=None):
+def build_embeddings(chunk_path):
     # if embedder is None:
     #     embedder = SentenceTransformer("all-MiniLM-L6-v2")
     embedder = ModelCache.load_embedder(model_name="all-mpnet-base-v2")
@@ -21,6 +21,6 @@ def build_embeddings(chunk_path, embedder=None):
     faiss.normalize_L2(embeddings)
     index = faiss.IndexFlatIP(embeddings.shape[1])
     index.add(embeddings)
-    faiss.write_index(index, "data/processed/faiss_index.bin")
+    faiss.write_index(index, os.path.join(Config.PROCESSED_DIR, "faiss_index.bin"))
     print("FAISS index saved at data/processed/faiss_index.bin")
 
