@@ -20,30 +20,24 @@ This app takes any long `.mp4` video (like a cricket match, lecture, meeting, or
 
 ## 🧱 Folder Structure
 
+```
 video-highlights/
 ├── api/
-│ ├── server.py # FastAPI backend routes
-│ └── jobs.py # Asynchronous job management
+│   ├── server.py
+│   └── jobs.py
 ├── app/
-│ └── streamlit_app.py # Streamlit UI for uploads & progress
+│   └── streamlit_app.py
 ├── src/
-│ ├── audio/transcriber.py
-│ ├── text/
-│ │ ├── chunker.py
-│ │ ├── embedding_builder.py
-│ │ ├── highlight_selector.py
-│ ├── video/cutter.py
-│ └── utils/
-│ ├── config.py
-│ └── helpers.py
-├── data/
-│ ├── raw/ # Uploaded videos
-│ └── processed/ # Transcripts, FAISS index, highlights
+│   ├── audio/transcriber.py
+│   ├── text/{chunker,embedding_builder,highlight_selector}.py
+│   ├── video/cutter.py
+│   └── utils/{config,helpers}.py
+├── data/{raw,processed}/
 ├── Dockerfile.api
 ├── Dockerfile.ui
 ├── docker-compose.yml
 └── requirements.txt
-
+```
 
 ---
 
@@ -55,28 +49,106 @@ git clone https://github.com/Dheeraj-1999/video-highlights.git
 cd video-highlights
 ```
 
-## Using Conda (recommended):
-```
+### 2️⃣ Create environment
+```bash
 conda create -n genai python=3.10 -y
 conda activate genai
 ```
-## Or using venv:
-```
+or
+```bash
 python -m venv genai
-genai\Scripts\activate      # Windows
+source genai/bin/activate   # Mac/Linux
+genai\Scripts\activate    # Windows
 ```
 
-## Install dependencies
-```
+### 3️⃣ Install dependencies
+```bash
 pip install -r requirements.txt
 ```
 
+---
 
-## Start the Streamlit Frontend
+## 🚀 Run the Application
+
+### 1️⃣ Start Backend (FastAPI)
+```bash
+python -m uvicorn api.server:app --port 8000
 ```
+→ Runs on **http://127.0.0.1:8000**
+
+### 2️⃣ Start Frontend (Streamlit)
+```bash
 streamlit run app/streamlit_app.py
 ```
-## Start the FastAPI Backend
+→ Runs on **http://localhost:8501**
+
+---
+
+## 🎬 Using the App
+
+1. Upload a `.mp4` file  
+2. Choose target highlight duration (e.g. 60–180 s)  
+3. Click **Generate Highlights**  
+4. Watch progress → download final highlight when complete  
+
+---
+
+## 🧠 Model Configuration
+
+| Component | Default | Change in | Alternatives |
+|------------|----------|------------|---------------|
+| Whisper | `tiny` | `src/audio/transcriber.py` | `base`, `small` |
+| Embeddings | `all-mpnet-base-v2` | `src/text/embedding_builder.py`, `highlight_selector.py` | `all-MiniLM-L6-v2` |
+| LLM | `gpt-4o-mini` | `src/text/highlight_selector.py` | `gpt-4o`, `gpt-3.5-turbo` |
+
+---
+
+## ✍️ Modify Prompt Template
+
+Edit file:
 ```
-uvicorn api.server:app --reload --port 8000
+src/prompts/highlight_prompt.txt
 ```
+
+Variables: `$target_duration`, `$custom_prompt`, `$results_json`
+
+---
+
+## 🧾 API Endpoints
+
+| Method | Endpoint | Description |
+|---------|-----------|-------------|
+| `POST` | `/jobs` | Upload & start job |
+| `GET` | `/status/{job_id}` | Check job progress |
+| `GET` | `/result/{job_id}` | Download final video |
+
+---
+
+## 🧰 Technologies
+
+| Layer | Tool |
+|--------|------|
+| Frontend | Streamlit |
+| Backend | FastAPI |
+| Transcription | Whisper |
+| Embeddings | SentenceTransformers + FAISS |
+| LLM | GPT-4o-mini |
+| Video Editing | MoviePy |
+| Deployment | Docker / AWS Lightsail |
+
+---
+
+## 🩺 Troubleshooting
+
+| Issue | Fix |
+|--------|-----|
+| OOM | use Whisper tiny model |
+| 404 result | wait few seconds before polling |
+| list index out of range | re-run, re-check chunks |
+| cosine threshold fail | lower threshold in `highlight_selector.py` |
+
+---
+
+## 🏁 Summary
+
+GenAI Video Highlights is a modular pipeline that automates highlight generation using AI — ready for demos, interview showcases, and real-world projects 🚀
